@@ -18,12 +18,12 @@ Here's a quick overview of features
 - Generate 4/4 Grooves using random HiHat and Kick Drum patterns
 - Change subdivision to triplets
 - Three modes: Easy, Medium, Hard
-- Accented HiHat notes
-
+- Select static HiHat or Kick Pattern and only shuffle the other one.
 
 ## Future Ideas
 
-- [ ] Playback Grooves
+- [ ] Playback Grooves via midi
+- [ ] Accented HiHat notes
 - [ ] Different Time Signatures
 - [ ] Add Ghost Notes
 - [ ] Sync 2 devices via Bluetooth (1 for Bass, 1 for Drums)
