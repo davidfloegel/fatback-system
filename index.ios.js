@@ -3,7 +3,7 @@
  * https://github.com/facebook/react-native
  * @flow
  */
-
+import _ from 'lodash'
 import React, { Component } from 'react';
 import { Accidental } from 'vexflow/src/accidental';
 import { Stave } from 'vexflow/src/stave';
@@ -17,8 +17,11 @@ import {
   AppRegistry,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View
 } from 'react-native';
+
+import { LETTERS } from './src/Definitions'
 
 export default class FatbackSystem extends Component {
   constructor(props) {
@@ -32,29 +35,56 @@ export default class FatbackSystem extends Component {
     stave.setTimeSignature('4/4');
     stave.draw();
 
-    const group1 = [
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "8" }),
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "16" }),
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "16" }),
-    ]
+    const letterKeys = _.keys( LETTERS )
+    const random = _.random( letterKeys.length )
 
-    const group2 = [
-      new StaveNote({clef: "percussion", keys: ["f/5/x2", "a/4"], duration: "8" }),
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "8" }),
-    ]
+    const TEST = LETTERS[ letterKeys[ random ] ]
 
-    const group3 = [
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "8" }),
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "8" }),
-    ]
+    let groups = [];
+    const beams = [];
 
-    const group4 = [
-      new StaveNote({clef: "percussion", keys: ["f/5/x2", "a/4"], duration: "8" }),
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "16" }),
-      new StaveNote({clef: "percussion", keys: ["f/5/x2"], duration: "16" }),
-    ]
+    for( let i = 1; i <= 4; i++ ) {
+        const values = TEST.values
+
+        let containsRest = false
+        const tmp = values.map( ( x, v ) => {
+          containsRest = x.indexOf( 'r' ) > -1 ? true : false
+          const type = containsRest ? '' : '/x2'
+          let key = [ `f/5${ type }` ]
+
+          if( ( i === 2 || i === 4 ) && v === 0 ) {
+              // add backbeat
+              if( containsRest ) {
+                  x = x.substring( 0, x.length - 1 )
+                  key = [ "a/4" ]
+              } else {
+                  key = [ ...key, "a/4" ]
+              }
+          }
+
+          const t = new StaveNote( { clef: "percussion", keys: key, duration: x } );
+
+          // add a dot
+          if( x.indexOf( 'd' ) > -1 ) {
+              t.addDotToAll()
+          }
+
+          return t;
+        } )
+
+        const beamOverRest = TEST.beamOverRest ? true : false
+
+        const beam = Beam.generateBeams( tmp, { beam_rests: beamOverRest, maintain_stem_directions: true, flat_beams: true } )
+        beams.push( ...beam )
+        // beams.push( new Beam( tmp ) )
 
 
+        groups = [ ...groups, ...tmp ]
+
+        // if( containsRest ) {
+
+        // }
+    }
 
     const kickAndSnare = [
       new StaveNote({clef: "percussion", keys: ["d/4"], duration: "q", stem_direction: -1  }),
@@ -63,16 +93,7 @@ export default class FatbackSystem extends Component {
       new StaveNote({clef: "percussion", keys: ["d/4"], duration: "q", stem_direction: -1  })
     ];
 
-    beams = [
-      new Beam(group1),
-      new Beam(group2),
-      new Beam(group3),
-      new Beam(group4)
-    ]
-
-    const allNotes = [
-      ...group1, ...group2, ...group3, ...group4
-    ]
+    const allNotes = groups
 
     const voice = new Voice({num_beats: 4,  beat_value: 4});
     voice.addTickables(allNotes);
@@ -94,7 +115,13 @@ export default class FatbackSystem extends Component {
 
     return (
       <View style={styles.container}>
-        { context.render() }
+        <View style={ { height: 150 } }>
+          { context.render() }
+        </View>
+
+        <View style={ { position: 'absolute', bottom: 10, left: 10 } }>
+          <TouchableOpacity onPress={ () => this.setState( { x: _.random( 100 ) } ) }><Text style={ { fontWeight: 'bold' } }>Refresh</Text></TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -103,7 +130,6 @@ export default class FatbackSystem extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },

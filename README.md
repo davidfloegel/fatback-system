@@ -22,6 +22,7 @@ Here's a quick overview of features
 
 ## Future Ideas
 
+- [ ] Multibar Grooves
 - [ ] Playback Grooves via midi
 - [ ] Accented HiHat notes
 - [ ] Different Time Signatures
