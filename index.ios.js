@@ -23,7 +23,7 @@ import {
   View
 } from 'react-native';
 
-// const { height, width } = Dimensions.get( 'window' )
+const { height, width } = Dimensions.get( 'window' )
 
 import { LETTERS } from './src/Definitions'
 
@@ -33,25 +33,25 @@ export default class FatbackSystem extends Component {
   constructor(props) {
     super(props);
 
-    // this.state = {
-    //    height: 0,
-    //    width: 0,
-    //    workspaceWidth: 0,
-    //    workspaceHeight: 0
-    // }
+    this.state = {
+       height: 0,
+       width: 0,
+       workspaceWidth: 0,
+       workspaceHeight: 0
+    }
   }
 
   componentDidMount() {
-    // this.setState( { 
-    //   height, 
-    //   width,
-    //   workspaceHeight: 1, //height * 0.7,
-    //   workspaceWidth: 1,// width * 0.9
-    // } )
+    this.setState( { 
+      height, 
+      width,
+      workspaceHeight: ( height || 0 ) * 0.7, // 70% of screenheight
+      workspaceWidth: ( width || 0 ) * 0.9 // 90% of screenwidth
+    } )
   }
 
-  runVexFlowCode(context) {
-    const stave = new Stave(0, 150, 590);
+  runVexFlowCode(context, width, height) {
+    const stave = new Stave(0, height/3.5, Math.round( width ) - 1 );
     stave.setContext(context);
     stave.setClef('percussion');
     stave.setTimeSignature('4/4');
@@ -126,14 +126,14 @@ export default class FatbackSystem extends Component {
   }
 
   render() {
-    const context = new ReactNativeSVGContext(NotoFontPack, { width: 400, height: 200 });
-    this.runVexFlowCode(context);
+    const { workspaceWidth, workspaceHeight } = this.state
 
-    // const { workspaceWidth, workspaceHeight } = this.state
+    if( !workspaceWidth && !workspaceHeight || ( workspaceHeight === 0 || workspaceWidth === 0 ) ) {
+      return null
+    }
 
-    // if( !workspaceWidth && !workspaceHeight ) {
-    //   return null
-    // }
+    const context = new ReactNativeSVGContext(NotoFontPack, { width: workspaceWidth, height: workspaceHeight });
+    this.runVexFlowCode(context, workspaceWidth, workspaceHeight);
 
 
     return (
@@ -148,11 +148,9 @@ export default class FatbackSystem extends Component {
           <View style={ [ styles.headerAside, styles.headerRight ] }><Icon name="cog" size={ 20 } color={ MUSO_MAIN } /></View>
         </View>
 
-        { /* <View style={ { height: 150 } }>
-          
-        </View>*/ }
-
-        { context.render() }
+        <View>
+            { context.render() }
+        </View>
 
         <View style={ styles.footer }>
           <Text style={ styles.footerText }>Powered by Muso Solutions</Text>
