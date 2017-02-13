@@ -25,10 +25,21 @@ export const LETTERS = {
     G: { values: [ '8r', '16', '16' ] },
     H: { values: [ '8d', '16' ] },
     I: { values: [ '8', '8' ] },
-    J: { values: [ '16r', '16', '16r', '16' ], beamOverRest: true  },
+    J: { values: [ '16r', '16', '16r', '16' ] },
     K: { values: [ '16', '16', '8' ] },
     L: { values: [ '16r', '16', '16', '16' ] },
     M: { values: [ '8', '16', '16' ] },
     N: { values: [ '16', '8', '16' ] },
     O: { values: [ 'qr' ] },
+}
+
+export const TRIPLET_LETTERS = {
+    Q: { values: [ 'q' ] },
+    R: { values: [ '8r', '8', '8r' ] },
+    S: { values: [ '8r', '8r', '8' ] },
+    T: { values: [ '8', '8', '8r' ] },
+    U: { values: [ '8r', '8', '8' ] },
+    V: { values: [ '8', '8r', '8' ] },
+    W: { values: [ '8', '8', '8' ] },
+    X: { values: [ 'qr' ] },
 }

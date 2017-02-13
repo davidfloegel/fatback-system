@@ -5,6 +5,7 @@
  */
 import _ from 'lodash'
 import React, { Component } from 'react';
+import { Dimensions } from 'react-native'
 import { Accidental } from 'vexflow/src/accidental';
 import { Stave } from 'vexflow/src/stave';
 import { StaveNote } from 'vexflow/src/stavenote';
@@ -12,6 +13,7 @@ import { Voice } from 'vexflow/src/voice';
 import { Beam } from 'vexflow/src/beam';
 import { Formatter } from 'vexflow/src/formatter';
 import { ReactNativeSVGContext, NotoFontPack } from 'standalone-vexflow-context';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {
   AppRegistry,
@@ -21,11 +23,31 @@ import {
   View
 } from 'react-native';
 
+// const { height, width } = Dimensions.get( 'window' )
+
 import { LETTERS } from './src/Definitions'
+
+const MUSO_MAIN = '#898CFF'
 
 export default class FatbackSystem extends Component {
   constructor(props) {
     super(props);
+
+    // this.state = {
+    //    height: 0,
+    //    width: 0,
+    //    workspaceWidth: 0,
+    //    workspaceHeight: 0
+    // }
+  }
+
+  componentDidMount() {
+    // this.setState( { 
+    //   height, 
+    //   width,
+    //   workspaceHeight: 1, //height * 0.7,
+    //   workspaceWidth: 1,// width * 0.9
+    // } )
   }
 
   runVexFlowCode(context) {
@@ -36,7 +58,7 @@ export default class FatbackSystem extends Component {
     stave.draw();
 
     const letterKeys = _.keys( LETTERS )
-    const random = _.random( letterKeys.length )
+    const random = _.random( letterKeys.length - 1 )
 
     const TEST = LETTERS[ letterKeys[ random ] ]
 
@@ -71,19 +93,13 @@ export default class FatbackSystem extends Component {
 
           return t;
         } )
-
-        const beamOverRest = TEST.beamOverRest ? true : false
-
-        const beam = Beam.generateBeams( tmp, { beam_rests: beamOverRest, maintain_stem_directions: true, flat_beams: true } )
+        
+        const beam = Beam.generateBeams( tmp, { beam_rests: true, beam_middle_only: true, maintain_stem_directions: true, flat_beams: true } )
         beams.push( ...beam )
-        // beams.push( new Beam( tmp ) )
 
 
         groups = [ ...groups, ...tmp ]
 
-        // if( containsRest ) {
-
-        // }
     }
 
     const kickAndSnare = [
@@ -110,17 +126,36 @@ export default class FatbackSystem extends Component {
   }
 
   render() {
-    const context = new ReactNativeSVGContext(NotoFontPack, { width: 600, height: 400 });
+    const context = new ReactNativeSVGContext(NotoFontPack, { width: 400, height: 200 });
     this.runVexFlowCode(context);
+
+    // const { workspaceWidth, workspaceHeight } = this.state
+
+    // if( !workspaceWidth && !workspaceHeight ) {
+    //   return null
+    // }
+
 
     return (
       <View style={styles.container}>
-        <View style={ { height: 150 } }>
-          { context.render() }
+        <View style={ styles.header }>
+          <View style={ [ styles.headerAside, styles.headerLeft ] }>
+            <TouchableOpacity onPress={ () => this.setState( { x: _.random( 100 ) } ) }>
+              <Icon name="refresh" size={ 20 } color={ MUSO_MAIN } />
+            </TouchableOpacity>
+          </View>
+          <View style={ styles.headerTitle }><Text style={ styles.title }>The Fatback System</Text></View>
+          <View style={ [ styles.headerAside, styles.headerRight ] }><Icon name="cog" size={ 20 } color={ MUSO_MAIN } /></View>
         </View>
 
-        <View style={ { position: 'absolute', bottom: 10, left: 10 } }>
-          <TouchableOpacity onPress={ () => this.setState( { x: _.random( 100 ) } ) }><Text style={ { fontWeight: 'bold' } }>Refresh</Text></TouchableOpacity>
+        { /* <View style={ { height: 150 } }>
+          
+        </View>*/ }
+
+        { context.render() }
+
+        <View style={ styles.footer }>
+          <Text style={ styles.footerText }>Powered by Muso Solutions</Text>
         </View>
       </View>
     );
@@ -131,7 +166,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    paddingTop: 70,
+    backgroundColor: '#f9f9f9',
   },
   welcome: {
     fontSize: 20,
@@ -143,6 +179,57 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 5,
   },
+
+  header: {
+    backgroundColor: '#fff',
+    height: 50,
+    alignSelf: 'stretch',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    shadowColor: '#444',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
+    shadowOpacity: .3,
+    flexDirection: 'row',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0
+  },
+
+  headerTitle: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 3
+  },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 16
+  },
+  headerAside: {
+    flex: 1,
+    justifyContent: 'center'
+  },
+  headerLeft: {
+    paddingLeft: 20
+  },
+  headerRight: {
+    paddingRight: 20,
+    alignItems: 'flex-end'
+  },
+
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    alignItems: 'center'
+  },
+  footerText: {
+    fontSize: 10,
+    color: '#ccc',
+    paddingVertical: 10
+  }
 });
 
 AppRegistry.registerComponent('ReactNativeVexFlow', () => FatbackSystem);
