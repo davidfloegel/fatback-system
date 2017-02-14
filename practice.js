@@ -32,7 +32,10 @@ export default class FatbackSystem extends Component {
        height: 0,
        width: 0,
        workspaceWidth: 0,
-       workspaceHeight: 0
+       workspaceHeight: 0,
+       context: null,
+       hihatLetter: 'A',
+       kickLetter: 'A'
     }
   }
 
@@ -45,11 +48,23 @@ export default class FatbackSystem extends Component {
     } )
   }
 
-  generateBeat( voice ) {
-    const letterKeys = _.keys( LETTERS )
-    const random = _.random( letterKeys.length - 1 )
+  generateBeat( voice, refresh ) {
+      const letterKeys = _.keys( LETTERS )
 
-    const TEST = LETTERS[ letterKeys[ random ] ]
+      let letterkey = letterKeys[ _.random( letterKeys.length - 1 ) ]
+      let newHiHatLetter = 'A'
+      if( voice === 'hihat' ) { 
+        letterkey = refresh ? letterKeys[ _.random( letterKeys.length - 1 ) ] : this.state.hihatLetter
+        newHiHatLetter = letterkey
+      }
+
+      let newKickLetter = 'A'
+      if( voice === 'kick' ) {
+        letterkey = refresh ? letterKeys[ _.random( letterKeys.length - 1 ) ] : this.state.kickLetter
+        newKickLetter = letterkey
+      }
+
+      const USE_LETTER = LETTERS[ letterkey ]
 
       let groups = [];
       const beams = [];
@@ -57,7 +72,7 @@ export default class FatbackSystem extends Component {
       const position = voice === 'hihat' ? 'f/5' : 'd/4'
 
       for( let i = 1; i <= 4; i++ ) {
-          const values = TEST.values
+          const values = USE_LETTER.values
 
           let containsRest = false
           const tmp = values.map( ( x, v ) => {
@@ -95,19 +110,22 @@ export default class FatbackSystem extends Component {
 
       }
 
-      return { groups, beams }
+      return { groups, beams, newHiHatLetter, newKickLetter }
   }
 
-  runVexFlowCode(context, width, height) {
+  runVexFlowCode(context, width, height, type) {
     const stave = new Stave(0, 0, Math.round( width ) - 1 );
     stave.setContext(context);
     stave.setClef('percussion');
     stave.setTimeSignature('4/4');
     stave.draw();
 
-    const { beams, groups } = this.generateBeat( 'hihat' )
+    const refreshHiHat = type === 'hihat' || type === 'all'
+    const hihatBeat = this.generateBeat( 'hihat', refreshHiHat )
+    const { beams, groups } = hihatBeat
 
-    const kickBeat = this.generateBeat( 'kick' )
+    const refreshKick = type === 'kick' || type === 'all'
+    const kickBeat = this.generateBeat( 'kick', refreshKick )
 
     const allNotes = groups
 
@@ -124,6 +142,28 @@ export default class FatbackSystem extends Component {
     
     beams.forEach(function(b) {b.setContext(context).draw()})
     kickBeat.beams.forEach(function(b) {b.setContext(context).draw()})
+
+    if( type === 'all' ) {
+        this.setState( { hihatLetter: hihatBeat.newHiHatLetter, kickLetter: kickBeat.newKickLetter } )
+    }
+
+    if( type === 'hihat' ) {
+      this.setState( { hihatLetter: hihatBeat.newHiHatLetter } )
+    }
+
+    if( type === 'kick' ) {
+      this.setState( { kickLetter: kickBeat.newKickLetter } )
+    }
+  }
+
+
+  generate( type ) {
+      const { workspaceWidth, workspaceHeight } = this.state
+
+      const context = new ReactNativeSVGContext(NotoFontPack, { width: workspaceWidth, height: workspaceHeight });
+      this.runVexFlowCode(context, workspaceWidth, workspaceHeight, type);
+
+      this.setState( { context } ) 
   }
 
   render() {
@@ -133,26 +173,24 @@ export default class FatbackSystem extends Component {
       return null
     }
 
-    const context = new ReactNativeSVGContext(NotoFontPack, { width: workspaceWidth, height: workspaceHeight });
-    this.runVexFlowCode(context, workspaceWidth, workspaceHeight);
-
+    const { context } = this.state
 
     return (
       <View>
         <View>
-            { context.render() }
+            { context && context.render() }
         </View>
 
         <View style={ { width: workspaceWidth, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', height: 50, alignSelf: 'stretch' } }>
-              <TouchableOpacity style={ styles.button } onPress={ () => this.setState( { x: _.random( 100 ) } ) }>
+              <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'all' ) }>
                 <Text style={ styles.buttonText }>New Groove</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={ styles.button }>
+              <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'hihat' ) }>
                 <Text style={ styles.buttonText }>New HiHat Pattern</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={ styles.button }>
+              <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'kick' ) }>
                 <Text style={ styles.buttonText }>New Kick Pattern</Text>
               </TouchableOpacity>
         </View>
