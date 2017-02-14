@@ -1,156 +1,84 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
 import _ from 'lodash'
 import React, { Component } from 'react';
 import { Dimensions } from 'react-native'
-import { Accidental } from 'vexflow/src/accidental';
-import { Stave } from 'vexflow/src/stave';
-import { StaveNote } from 'vexflow/src/stavenote';
-import { Voice } from 'vexflow/src/voice';
-import { Beam } from 'vexflow/src/beam';
-import { Formatter } from 'vexflow/src/formatter';
-import { ReactNativeSVGContext, NotoFontPack } from 'standalone-vexflow-context';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {
-  AppRegistry,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
+  AppRegistry, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { height, width } = Dimensions.get( 'window' )
 
-import { LETTERS } from './src/Definitions'
-
 const MUSO_MAIN = '#898CFF'
+
+import PracticeView from './practice'
+import PortraitAlert from './portraitmode'
+import SettingsView from './settings'
+
 
 export default class FatbackSystem extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-       height: 0,
-       width: 0,
-       workspaceWidth: 0,
-       workspaceHeight: 0
+        route: 'practice' // [ practice, settings ]
     }
   }
 
-  componentDidMount() {
-    this.setState( { 
-      height, 
-      width,
-      workspaceHeight: ( height || 0 ) * 0.7, // 70% of screenheight
-      workspaceWidth: ( width || 0 ) * 0.9 // 90% of screenwidth
-    } )
+  renderHeader() {
+      const { route } = this.state
+
+      return (
+          <View style={ styles.header }>
+            <View style={ [ styles.headerAside, styles.headerLeft ] }>
+              { route === 'settings' && ( <TouchableOpacity onPress={ () => this.setState( { route: 'practice' } ) }>
+                <Icon name="arrow-left" size={ 20 } color={ MUSO_MAIN } />
+              </TouchableOpacity> ) }
+            </View>
+            <View style={ styles.headerTitle }>
+              <Text style={ styles.title }>{ route === 'settings' ? 'Settings' : 'The Fatback System' }</Text>
+            </View>
+            <View style={ [ styles.headerAside, styles.headerRight ] }>
+              { route === 'practice' && ( <TouchableOpacity onPress={ () => this.setState( { route: 'settings' } ) }>
+                <Icon name="cog" size={ 20 } color={ MUSO_MAIN } />
+              </TouchableOpacity> ) }
+            </View>
+          </View>
+      )
   }
 
-  runVexFlowCode(context, width, height) {
-    const stave = new Stave(0, height/3.5, Math.round( width ) - 1 );
-    stave.setContext(context);
-    stave.setClef('percussion');
-    stave.setTimeSignature('4/4');
-    stave.draw();
+  renderContent() {
+      const { route, orientation } = this.state
 
-    const letterKeys = _.keys( LETTERS )
-    const random = _.random( letterKeys.length - 1 )
-
-    const TEST = LETTERS[ letterKeys[ random ] ]
-
-    let groups = [];
-    const beams = [];
-
-    for( let i = 1; i <= 4; i++ ) {
-        const values = TEST.values
-
-        let containsRest = false
-        const tmp = values.map( ( x, v ) => {
-          containsRest = x.indexOf( 'r' ) > -1 ? true : false
-          const type = containsRest ? '' : '/x2'
-          let key = [ `f/5${ type }` ]
-
-          if( ( i === 2 || i === 4 ) && v === 0 ) {
-              // add backbeat
-              if( containsRest ) {
-                  x = x.substring( 0, x.length - 1 )
-                  key = [ "a/4" ]
-              } else {
-                  key = [ ...key, "a/4" ]
-              }
+      if( route === 'practice' ) {
+          if( orientation === 'PORTRAIT' ) {
+              return <PortraitAlert />
           }
 
-          const t = new StaveNote( { clef: "percussion", keys: key, duration: x } );
+          return <PracticeView />
+      }
 
-          // add a dot
-          if( x.indexOf( 'd' ) > -1 ) {
-              t.addDotToAll()
-          }
+      if( route === 'settings' ) {
+        return <SettingsView />
+      }
+  }
 
-          return t;
-        } )
-        
-        const beam = Beam.generateBeams( tmp, { beam_rests: true, beam_middle_only: true, maintain_stem_directions: true, flat_beams: true } )
-        beams.push( ...beam )
+  onLayout( e ) {
+    const { width, height } = e
 
-
-        groups = [ ...groups, ...tmp ]
-
-    }
-
-    const kickAndSnare = [
-      new StaveNote({clef: "percussion", keys: ["d/4"], duration: "q", stem_direction: -1  }),
-      new StaveNote({clef: "percussion", keys: ["d/4"], duration: "q", stem_direction: -1  }),
-      new StaveNote({clef: "percussion", keys: ["d/4"], duration: "q", stem_direction: -1  }),
-      new StaveNote({clef: "percussion", keys: ["d/4"], duration: "q", stem_direction: -1  })
-    ];
-
-    const allNotes = groups
-
-    const voice = new Voice({num_beats: 4,  beat_value: 4});
-    voice.addTickables(allNotes);
-
-    const voice2 = new Voice({num_beats: 4,  beat_value: 4});
-    voice2.addTickables(kickAndSnare);
-
-    const formatter = new Formatter().joinVoices([voice, voice2]).formatToStave([voice, voice2], stave);
-    voice.draw(context, stave);
-    
-    voice2.draw(context, stave);
-    
-    beams.forEach(function(b) {b.setContext(context).draw()})
+    const orientation = (width > height) ? 'LANDSCAPE' : 'PORTRAIT';
+    this.setState( { orientation } )
   }
 
   render() {
-    const { workspaceWidth, workspaceHeight } = this.state
-
-    if( !workspaceWidth && !workspaceHeight || ( workspaceHeight === 0 || workspaceWidth === 0 ) ) {
-      return null
-    }
-
-    const context = new ReactNativeSVGContext(NotoFontPack, { width: workspaceWidth, height: workspaceHeight });
-    this.runVexFlowCode(context, workspaceWidth, workspaceHeight);
-
+    _onLayout = e => this.onLayout( e.nativeEvent.layout )
 
     return (
-      <View style={styles.container}>
-        <View style={ styles.header }>
-          <View style={ [ styles.headerAside, styles.headerLeft ] }>
-            <TouchableOpacity onPress={ () => this.setState( { x: _.random( 100 ) } ) }>
-              <Icon name="refresh" size={ 20 } color={ MUSO_MAIN } />
-            </TouchableOpacity>
-          </View>
-          <View style={ styles.headerTitle }><Text style={ styles.title }>The Fatback System</Text></View>
-          <View style={ [ styles.headerAside, styles.headerRight ] }><Icon name="cog" size={ 20 } color={ MUSO_MAIN } /></View>
-        </View>
+      <View style={styles.container} onLayout={ e => _onLayout( e ) }>
+        { this.renderHeader() }
 
-        <View>
-            { context.render() }
-        </View>
+        
+        { this.renderContent() }
+        
 
         <View style={ styles.footer }>
           <Text style={ styles.footerText }>Powered by Muso Solutions</Text>
@@ -221,7 +149,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9'
   },
   footerText: {
     fontSize: 10,
