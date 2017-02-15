@@ -161,19 +161,20 @@ export default class FatbackSystem extends Component {
     stave.setTimeSignature('4/4');
     stave.draw();
 
+    const BEAT_VALUE = this.props.subdivision === '16th notes' ? 4 : 3
+
     const refreshHiHat = type === 'hihat' || type === 'all'
     const hihatBeat = this.generateBeat( 'hihat', refreshHiHat )
     const { beams, groups } = hihatBeat
+    const allNotes = groups
+
+    const voice = new Voice({num_beats: 4,  beat_value: BEAT_VALUE});
+    voice.addTickables(allNotes);
+
 
     const refreshKick = type === 'kick' || type === 'all'
     const kickBeat = this.generateBeat( 'kick', refreshKick )
-
-    const allNotes = groups
-
-    const voice = new Voice({num_beats: 4,  beat_value: 4});
-    voice.addTickables(allNotes);
-
-    const voice2 = new Voice({num_beats: 4,  beat_value: 4});
+    const voice2 = new Voice({num_beats: 4,  beat_value: BEAT_VALUE});
     voice2.addTickables(kickBeat.groups);
 
     const formatter = new Formatter().joinVoices([voice, voice2]).formatToStave([voice, voice2], stave);
