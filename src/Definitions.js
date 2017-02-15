@@ -30,7 +30,14 @@ export const LETTERS = {
     L: { values: [ '16r', '16', '16', '16' ] },
     M: { values: [ '8', '16', '16' ] },
     N: { values: [ '16', '8', '16' ] },
-    O: { values: [ 'qr' ] },
+    O: { values: [ '16', '16', '16', '16' ] },
+    P: { values: [ 'qr' ] },
+}
+
+export const LETTERS_LEVELS = {
+    easy: [ 'A', 'C', 'I', 'P' ],
+    medium: [ 'E', 'G', 'H', 'K', 'M' ],
+    hard: [ 'B', 'D', 'F', 'J', 'L', 'N' ]
 }
 
 export const TRIPLET_LETTERS = {
@@ -42,4 +49,10 @@ export const TRIPLET_LETTERS = {
     V: { values: [ '8', '8r', '8' ] },
     W: { values: [ '8', '8', '8' ] },
     X: { values: [ 'qr' ] },
+}
+
+export const TRIPLET_LETTERS_LEVELS = {
+    easy: [ 'Q', 'W', 'X' ],
+    medium: [ 'T', 'V' ],
+    hard: [ 'R', 'S', 'U' ]
 }

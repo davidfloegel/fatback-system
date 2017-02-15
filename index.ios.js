@@ -4,7 +4,7 @@ import { Dimensions } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import {
-  AppRegistry, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+  AppRegistry, AsyncStorage, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { height, width } = Dimensions.get( 'window' )
 
@@ -20,8 +20,41 @@ export default class FatbackSystem extends Component {
     super(props);
 
     this.state = {
-        route: 'practice' // [ practice, settings ]
+        bootstrapped: false,
+        route: 'practice', // [ practice, settings ],
+
+        level: 'Easy',
+        subdivision: '16th notes',
+
+        savingSettings: false
     }
+  }
+
+  componentDidMount() {
+     AsyncStorage.getItem( 'fatback-settings', ( err, res ) => {
+      let settings = JSON.parse( res ) || {}
+
+      this.setState( {
+         level: settings.level || 'Easy',
+         subdivision: settings.subdivision || '16th notes',
+         bootstrapped: true
+      } )
+    } )
+  }
+
+  updateSettings( key, val ) {
+    this.setState( { savingSettings: true } )
+    AsyncStorage.getItem( 'fatback-settings', ( err, res ) => {
+
+
+      let settings = err || !res ? { level: 'Easy', subdivision: '16th notes' } : JSON.parse( res )
+      settings[ key ] = val
+
+      AsyncStorage.setItem( 'fatback-settings', JSON.stringify( settings ), () => {
+        this.setState( { [ key ]: val } )
+        this.setState( { savingSettings: false } )
+      } );
+    } )
   }
 
   renderHeader() {
@@ -33,6 +66,12 @@ export default class FatbackSystem extends Component {
               { route === 'settings' && ( <TouchableOpacity onPress={ () => this.setState( { route: 'practice' } ) }>
                 <Icon name="arrow-left" size={ 20 } color={ MUSO_MAIN } />
               </TouchableOpacity> ) }
+
+              { route === 'practice' && ( <View>
+                <Text style={ { color: '#ccc', fontSize: 10 } }>MODE</Text>
+                <Text style={ { color: MUSO_MAIN, fontWeight: 'bold', fontSize: 12 } }>{ this.state.level.toUpperCase() }</Text> 
+                </View>
+              ) }
             </View>
             <View style={ styles.headerTitle }>
               <Text style={ styles.title }>{ route === 'settings' ? 'Settings' : 'The Fatback System' }</Text>
@@ -47,18 +86,33 @@ export default class FatbackSystem extends Component {
   }
 
   renderContent() {
-      const { route, orientation } = this.state
+      const { bootstrapped, route, orientation, width, height } = this.state
+
+      if( !bootstrapped ) {
+        return null
+      }
 
       if( route === 'practice' ) {
           if( orientation === 'PORTRAIT' ) {
               return <PortraitAlert />
           }
 
-          return <PracticeView />
+          return ( 
+            <PracticeView 
+              width={ width } 
+              height={ height }
+              level={ this.state.level }
+              subdivision={ this.state.subdivision } /> 
+          )
       }
 
       if( route === 'settings' ) {
-        return <SettingsView />
+        return ( 
+            <SettingsView
+               level={ this.state.level }
+               subdivision={ this.state.subdivision }
+               onChangeSettings={ ( k, v ) => this.updateSettings( k, v ) } /> 
+        )
       }
   }
 
@@ -66,7 +120,7 @@ export default class FatbackSystem extends Component {
     const { width, height } = e
 
     const orientation = (width > height) ? 'LANDSCAPE' : 'PORTRAIT';
-    this.setState( { orientation } )
+    this.setState( { orientation, width, height } )
   }
 
   render() {

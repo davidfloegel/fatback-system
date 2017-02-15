@@ -5,14 +5,15 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import SettingsList from 'react-native-settings-list';
 
 export default class Settings extends Component {
-    renderList( list ) {
+    renderList( key, list, active ) {
         return list.map( m => {
-            return this.renderItem( m, m === 'Medium', m )
+            return this.renderItem( key, m, m === active, m )
         } )
     }
 
-    renderItem( key, active, title ) {
-        return ( <SettingsList.Item 
+    renderItem( setting, key, active, title ) {
+        return ( <SettingsList.Item
+            onPress={ () => this.props.onChangeSettings( setting, title ) }
             key={ key }
             icon={ <Icon name="check" size={ 20 } style={ { paddingTop: 14, paddingLeft: 14 } } color={ active ? '#898CFF' : '#efefef' } /> }
             title={ title }
@@ -24,10 +25,10 @@ export default class Settings extends Component {
             <View style={ { flex: 1, alignSelf: 'stretch', paddingBottom: 40 } }>
                 <SettingsList borderColor={ '#ccc' }>
                     <SettingsList.Header headerText='Difficulty Mode' />
-                    { this.renderList( [ 'Easy', 'Medium', 'Hard' ] ) }
+                    { this.renderList( 'level', [ 'Easy', 'Medium', 'Hard', 'All' ], this.props.level ) }
 
                     <SettingsList.Header headerText='Subdivision' headerStyle={ { marginTop: 30 } } />
-                    { this.renderList( [ '16th notes', 'Triplets' ] ) }
+                    { this.renderList( 'subdivision', [ '16th notes', 'Triplets' ], this.props.subdivision ) }
                 </SettingsList>
             </View>
         )

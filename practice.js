@@ -18,9 +18,7 @@ import {
   View
 } from 'react-native';
 
-const { height, width } = Dimensions.get( 'window' )
-
-import { LETTERS } from './src/Definitions'
+import { LETTERS, LETTERS_LEVELS, TRIPLET_LETTERS, TRIPLET_LETTERS_LEVELS } from './src/Definitions'
 
 const MUSO_MAIN = '#898CFF'
 
@@ -40,31 +38,74 @@ export default class FatbackSystem extends Component {
   }
 
   componentDidMount() {
+    this.calcWorkSpace( this.props.width, this.props.height )
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if( nextProps.width !== this.state.width || nextProps.height !== this.state.height ) {
+        this.calcWorkSpace( nextProps.width, nextProps.height )
+    }
+  }
+
+  calcWorkSpace( width, height ) {
     this.setState( { 
-      height, 
+      height,
       width,
       workspaceHeight: ( height || 0 ) * 0.5, // 70% of screenheight
       workspaceWidth: ( width || 0 ) * 0.9 // 90% of screenwidth
     } )
   }
 
-  generateBeat( voice, refresh ) {
-      const letterKeys = _.keys( LETTERS )
+  getAvailableLetters() {
+     const { level, subdivision } = this.props
+
+     if( subdivision === 'Triplets' ) {
+        if( level === 'All' ) {
+            return _.keys( TRIPLET_LETTERS )
+        }
+
+        return TRIPLET_LETTERS_LEVELS[ level.toLowerCase() ]
+     } else {
+        if( level === 'All' ) {
+            return _.keys( LETTERS )
+        }
+
+        return LETTERS_LEVELS[ level.toLowerCase() ]
+     }
+  }
+
+  genRandom( currentLetter ) {
+      const letterKeys = this.getAvailableLetters()
 
       let letterkey = letterKeys[ _.random( letterKeys.length - 1 ) ]
+
+      if( letterkey === currentLetter ) {
+          return this.genRandom( currentLetter )
+      }
+
+      return letterkey
+  }
+
+  generateBeat( voice, refresh ) {
+      const letterKeys = this.getAvailableLetters()
+
+      let letterkey = letterKeys[ _.random( letterKeys.length - 1 ) ]
+
+
       let newHiHatLetter = 'A'
       if( voice === 'hihat' ) { 
-        letterkey = refresh ? letterKeys[ _.random( letterKeys.length - 1 ) ] : this.state.hihatLetter
+        letterkey = refresh ? this.genRandom( this.state.hihatLetter ) : this.state.hihatLetter
         newHiHatLetter = letterkey
       }
 
       let newKickLetter = 'A'
       if( voice === 'kick' ) {
-        letterkey = refresh ? letterKeys[ _.random( letterKeys.length - 1 ) ] : this.state.kickLetter
+        letterkey = refresh ? this.genRandom( this.state.kickLetter ) : this.state.kickLetter
         newKickLetter = letterkey
       }
 
-      const USE_LETTER = LETTERS[ letterkey ]
+      const USE_LETTERS = this.props.subdivision === 'Triplets' ? TRIPLET_LETTERS : LETTERS
+      const USE_LETTER = USE_LETTERS[ letterkey ]
 
       let groups = [];
       const beams = [];
@@ -181,18 +222,22 @@ export default class FatbackSystem extends Component {
             { context && context.render() }
         </View>
 
+        { !context && ( <View style={ { height: workspaceHeight, justifyContent: 'center', alignItems: 'center' } }>
+            <Text style={ { fontSize: 20, color: '#ccc' } }>Tap "New Groove" to start generating grooves!</Text>
+        </View> ) }
+
         <View style={ { width: workspaceWidth, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', height: 50, alignSelf: 'stretch' } }>
               <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'all' ) }>
                 <Text style={ styles.buttonText }>New Groove</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'hihat' ) }>
+              { context && ( <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'hihat' ) }>
                 <Text style={ styles.buttonText }>New HiHat Pattern</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> ) }
 
-              <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'kick' ) }>
+              { context && ( <TouchableOpacity style={ styles.button } onPress={ () => this.generate( 'kick' ) }>
                 <Text style={ styles.buttonText }>New Kick Pattern</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> ) }
         </View>
       </View>
     );
